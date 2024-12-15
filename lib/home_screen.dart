@@ -1,68 +1,56 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'book_details.dart';
+import 'favorites_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String email;
 
-  HomeScreen({required this.email});
+  HomeScreen({required this.email}); // Add the email parameter
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<Map<String, String>> books = []; // Store fetched books
-  String searchQuery = "fiction"; // Default search query
-  bool isLoading = false; // Show loading state
+  List<Map<String, String>> books = [];
+  List<Map<String, String>> favorites = [];
+  String searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    fetchBooks(searchQuery); // Fetch books when screen loads
+    fetchBooks();
   }
 
-  Future<void> fetchBooks(String query) async {
-    setState(() {
-      isLoading = true;
-    });
-
+  Future<void> fetchBooks([String query = 'fiction']) async {
     try {
-      final url = Uri.parse(
-          'https://www.googleapis.com/books/v1/volumes?q=$query');
+      final url = Uri.parse('https://www.googleapis.com/books/v1/volumes?q=$query');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final List<Map<String, String>> fetchedBooks = (data['items'] as List)
-            .map<Map<String, String>>((item) {
-          final volumeInfo = item['volumeInfo'] ?? {};
-          final imageLinks = volumeInfo['imageLinks'] ?? {};
-
-          return {
-            'title': (volumeInfo['title'] ?? 'Unknown Title').toString(),
-            'author': (volumeInfo['authors'] != null
-                    ? (volumeInfo['authors'] as List).join(', ')
-                    : 'Unknown Author')
-                .toString(),
-            'image': (imageLinks['thumbnail'] ?? '').toString(),
-            'description': (volumeInfo['description'] ?? 'No description available.')
-                .toString(),
-          };
-        }).toList();
-
         setState(() {
-          books = fetchedBooks;
+          books = (data['items'] as List).map<Map<String, String>>((item) {
+            final volumeInfo = item['volumeInfo'] as Map<String, dynamic>? ?? {};
+            final imageLinks = volumeInfo['imageLinks'] as Map<String, dynamic>? ?? {};
+            return {
+              'title': (volumeInfo['title'] ?? 'Unknown Title').toString(),
+              'author': (volumeInfo['authors'] != null
+                      ? (volumeInfo['authors'] as List).join(', ')
+                      : 'Unknown Author')
+                  .toString(),
+              'thumbnail': (imageLinks['thumbnail'] ?? '').toString(),
+              'description': (volumeInfo['description'] ?? 'No description available.').toString(),
+            };
+          }).toList();
         });
       } else {
-        throw Exception('Failed to load books');
+        print('Failed to fetch books: ${response.statusCode}');
       }
-    } catch (e) {
-      print("Error fetching books: $e");
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
+    } catch (error) {
+      print('Error fetching books: $error');
     }
   }
 
@@ -70,60 +58,114 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Welcome, ${widget.email}"),
+        title: Text('Welcome, ${widget.email}'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.favorite),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FavoritesScreen(favorites: favorites),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Search Bar
             TextField(
               decoration: InputDecoration(
                 hintText: "Search for books...",
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onSubmitted: (value) {
-                if (value.isNotEmpty) {
-                  fetchBooks(value); // Fetch books based on search query
-                }
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+                fetchBooks(value);
               },
             ),
-            SizedBox(height: 16),
-            // Book Recommendations or Loading Indicator
-            Expanded(
-              child: isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : books.isEmpty
-                      ? Center(child: Text("No books found."))
-                      : ListView.builder(
-                          itemCount: books.length,
-                          itemBuilder: (context, index) {
-                            final book = books[index];
-                            return Card(
-                              elevation: 4,
-                              margin: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: ListTile(
-                                leading: book['image']!.isNotEmpty
-                                    ? Image.network(book['image']!, width: 50)
-                                    : Icon(Icons.book, size: 50),
-                                title: Text(
-                                  book['title']!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Text(
-                                  "${book['author']}\n${book['description']}",
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+            const SizedBox(height: 20),
+            books.isEmpty
+                ? const Expanded(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : Expanded(
+                    child: GridView.builder(
+                      itemCount: books.length,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.7,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      itemBuilder: (context, index) {
+                        final book = books[index];
+                        return GestureDetector(
+                          onTap: () async {
+                            final selectedBook = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BookDetailsScreen(book: book),
                               ),
                             );
+                            if (selectedBook != null) {
+                              setState(() {
+                                favorites.add(selectedBook);
+                              });
+                            }
                           },
-                        ),
-            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: book['thumbnail']!.isNotEmpty
+                                      ? Image.network(
+                                          book['thumbnail']!,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Container(
+                                          color: Colors.grey[200],
+                                          child: const Center(
+                                            child: Icon(Icons.book, size: 50),
+                                          ),
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                book['title']!,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                book['author']!,
+                                style: const TextStyle(color: Colors.grey),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
           ],
         ),
       ),
