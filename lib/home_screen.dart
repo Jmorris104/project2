@@ -1,64 +1,68 @@
-import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'book_details.dart';
-import 'favorites_screen.dart';
+import 'community_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String email;
 
-  HomeScreen({required this.email});
+  const HomeScreen({required this.email, Key? key}) : super(key: key);
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
   List<Map<String, String>> books = [];
   List<Map<String, String>> favorites = [];
-  String searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    fetchBooks();
+    fetchBooks(); // Fetch default books
   }
 
   Future<void> fetchBooks([String query = 'fiction']) async {
+    final url =
+        'https://www.googleapis.com/books/v1/volumes?q=$query&maxResults=20';
     try {
-      final url = Uri.parse('https://www.googleapis.com/books/v1/volumes?q=$query');
-      final response = await http.get(url);
-
+      final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
           books = (data['items'] as List).map<Map<String, String>>((item) {
-            final volumeInfo = item['volumeInfo'] as Map<String, dynamic>? ?? {};
-            final imageLinks = volumeInfo['imageLinks'] as Map<String, dynamic>? ?? {};
+            final volumeInfo = item['volumeInfo'];
             return {
-              'title': (volumeInfo['title'] ?? 'Unknown Title').toString(),
-              'author': (volumeInfo['authors'] != null
-                      ? (volumeInfo['authors'] as List).join(', ')
-                      : 'Unknown Author')
-                  .toString(),
-              'thumbnail': (imageLinks['thumbnail'] ?? '').toString(),
-              'description': (volumeInfo['description'] ?? 'No description available.').toString(),
+              'title': volumeInfo['title'] ?? 'No Title',
+              'author': (volumeInfo['authors'] != null)
+                  ? (volumeInfo['authors'] as List).join(', ')
+                  : 'Unknown Author',
+              'description': volumeInfo['description'] ?? 'No Description',
+              'thumbnail': volumeInfo['imageLinks']?['thumbnail'] ?? '',
             };
           }).toList();
         });
       } else {
         print('Failed to fetch books: ${response.statusCode}');
       }
-    } catch (error) {
-      print('Error fetching books: $error');
+    } catch (e) {
+      print('Error fetching books: $e');
     }
+  }
+
+  void showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Welcome, ${widget.email}'),
+        title: const Text('Book Recommendations'),
         centerTitle: true,
       ),
       drawer: Drawer(
@@ -66,27 +70,26 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
+              decoration: const BoxDecoration(color: Colors.blue),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Menu',
+                    style: TextStyle(color: Colors.white, fontSize: 24),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Logged in as: ${widget.email}',
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ],
               ),
-              child: Text(
-                'Hello, ${widget.email}',
-                style: const TextStyle(color: Colors.white, fontSize: 20),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.comment),
-              title: const Text('Community Discussion'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Navigate to the Community Discussion screen
-              },
             ),
             ListTile(
               leading: const Icon(Icons.favorite),
               title: const Text('Favorites'),
               onTap: () {
-                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -96,11 +99,22 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.forum),
+              title: const Text('Community Discussions'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CommunityDiscussionsScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.settings),
               title: const Text('Settings'),
               onTap: () {
-                Navigator.pop(context);
-                // TODO: Navigate to the Settings screen
+                // Implement settings page
               },
             ),
           ],
@@ -111,29 +125,23 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             TextField(
+              controller: _searchController,
               decoration: InputDecoration(
-                hintText: "Search for books...",
+                hintText: 'Search books...',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                });
-                fetchBooks(value);
+              onSubmitted: (query) {
+                fetchBooks(query); // Fetch books based on the search query
               },
             ),
-            const SizedBox(height: 20),
-            books.isEmpty
-                ? const Expanded(
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                : Expanded(
-                    child: GridView.builder(
+            const SizedBox(height: 16),
+            Expanded(
+              child: books.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : GridView.builder(
                       itemCount: books.length,
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
@@ -144,18 +152,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemBuilder: (context, index) {
                         final book = books[index];
                         return GestureDetector(
-                          onTap: () async {
-                            final selectedBook = await Navigator.push(
+                          onTap: () {
+                            Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => BookDetailsScreen(book: book),
+                                builder: (context) => BookDetailsScreen(
+                                  book: book,
+                                  favorites: favorites,
+                                ),
                               ),
-                            );
-                            if (selectedBook != null) {
-                              setState(() {
-                                favorites.add(selectedBook);
-                              });
-                            }
+                            ).then((result) {
+                              if (result != null) {
+                                setState(() {
+                                  favorites.add(result);
+                                });
+                              }
+                            });
                           },
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,9 +209,35 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                     ),
-                  ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class FavoritesScreen extends StatelessWidget {
+  final List<Map<String, String>> favorites;
+
+  const FavoritesScreen({required this.favorites, Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Favorites')),
+      body: ListView.builder(
+        itemCount: favorites.length,
+        itemBuilder: (context, index) {
+          final book = favorites[index];
+          return ListTile(
+            leading: book['thumbnail']!.isNotEmpty
+                ? Image.network(book['thumbnail']!, height: 50, width: 50)
+                : const Icon(Icons.book),
+            title: Text(book['title']!),
+            subtitle: Text(book['author']!),
+          );
+        },
       ),
     );
   }

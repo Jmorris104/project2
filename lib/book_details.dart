@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 class BookDetailsScreen extends StatelessWidget {
   final Map<String, String> book;
+  final List<Map<String, String>> favorites;
 
-  const BookDetailsScreen({required this.book});
+  const BookDetailsScreen({
+    required this.book,
+    required this.favorites,
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +54,25 @@ class BookDetailsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pop(context, book); // Return the book to add to favorites
+                // Check if the book is already in favorites
+                final alreadyInFavorites = favorites.any(
+                  (favBook) => favBook['title'] == book['title'],
+                );
+
+                if (alreadyInFavorites) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${book['title']} is already in favorites!'),
+                    ),
+                  );
+                } else {
+                  Navigator.pop(context, book); // Return the book to add to favorites
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${book['title']} added to favorites!'),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
