@@ -7,7 +7,7 @@ import 'favorites_screen.dart';
 class HomeScreen extends StatefulWidget {
   final String email;
 
-  HomeScreen({required this.email}); // Add the email parameter
+  HomeScreen({required this.email});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -60,19 +60,51 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text('Welcome, ${widget.email}'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FavoritesScreen(favorites: favorites),
-                ),
-              );
-            },
-          ),
-        ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Text(
+                'Hello, ${widget.email}',
+                style: const TextStyle(color: Colors.white, fontSize: 20),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.comment),
+              title: const Text('Community Discussion'),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Navigate to the Community Discussion screen
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.favorite),
+              title: const Text('Favorites'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FavoritesScreen(favorites: favorites),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Navigate to the Settings screen
+              },
+            ),
+          ],
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

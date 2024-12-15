@@ -3,67 +3,62 @@ import 'package:flutter/material.dart';
 class BookDetailsScreen extends StatelessWidget {
   final Map<String, String> book;
 
-  const BookDetailsScreen({required this.book, Key? key}) : super(key: key);
+  const BookDetailsScreen({required this.book});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(book['title'] ?? 'Book Details'),
+        title: Text(book['title']!),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Book Thumbnail
-            Center(
-              child: Image.network(
-                book['thumbnail'] ?? '',
-                height: 200,
-                fit: BoxFit.cover,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: book['thumbnail']!.isNotEmpty
+                        ? Image.network(
+                            book['thumbnail']!,
+                            height: 200,
+                          )
+                        : const Icon(Icons.book, size: 100),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    book['title']!,
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'by ${book['author']}',
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    book['description']!,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-
-            // Book Title
-            Text(
-              book['title'] ?? 'No Title',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-
-            // Book Author
-            Text(
-              'Author: ${book['author'] ?? 'Unknown'}',
-              style: const TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
-
-            // Book Description
-            Text(
-              'Description:',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              book['description'] ?? 'No description available.',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const Spacer(),
-
-            // Add to Favorites Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context, book);
-                },
-                child: const Text('Add to Favorites'),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, book); // Return the book to add to favorites
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                minimumSize: const Size(double.infinity, 50),
               ),
+              child: const Text("Add to Favorites"),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
