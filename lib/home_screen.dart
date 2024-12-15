@@ -1,8 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'book_details.dart';
 import 'community_screen.dart';
+import 'recommendations_screen.dart';
+import 'google_book_api.dart';
 
 class HomeScreen extends StatefulWidget {
   final String email;
@@ -25,44 +25,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchBooks([String query = 'fiction']) async {
-    final url =
-        'https://www.googleapis.com/books/v1/volumes?q=$query&maxResults=20';
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          books = (data['items'] as List).map<Map<String, String>>((item) {
-            final volumeInfo = item['volumeInfo'];
-            return {
-              'title': volumeInfo['title'] ?? 'No Title',
-              'author': (volumeInfo['authors'] != null)
-                  ? (volumeInfo['authors'] as List).join(', ')
-                  : 'Unknown Author',
-              'description': volumeInfo['description'] ?? 'No Description',
-              'thumbnail': volumeInfo['imageLinks']?['thumbnail'] ?? '',
-            };
-          }).toList();
-        });
-      } else {
-        print('Failed to fetch books: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching books: $e');
-    }
-  }
-
-  void showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    final fetchedBooks = await GoogleBooksAPI.fetchBooks(query);
+    setState(() {
+      books = fetchedBooks;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Book Recommendations'),
+        title: const Text('Home'),
         centerTitle: true,
       ),
       drawer: Drawer(
@@ -71,19 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             DrawerHeader(
               decoration: const BoxDecoration(color: Colors.blue),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Menu',
-                    style: TextStyle(color: Colors.white, fontSize: 24),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Logged in as: ${widget.email}',
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ],
+              child: Text(
+                'Welcome, ${widget.email}',
+                style: const TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
             ListTile(
@@ -106,6 +69,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => CommunityDiscussionsScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.recommend),
+              title: const Text('Recommendations'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        RecommendationsScreen(favorites: favorites),
                   ),
                 );
               },

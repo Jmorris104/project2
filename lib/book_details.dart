@@ -12,9 +12,14 @@ class BookDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String title = book['title'] ?? 'No Title Available';
+    final String author = book['author'] ?? 'Unknown Author';
+    final String description = book['description'] ?? 'No description available.';
+    final String thumbnail = book['thumbnail'] ?? '';
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(book['title']!),
+        title: Text(title),
       ),
       body: Column(
         children: [
@@ -25,25 +30,27 @@ class BookDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(
-                    child: book['thumbnail']!.isNotEmpty
+                    child: thumbnail.isNotEmpty
                         ? Image.network(
-                            book['thumbnail']!,
+                            thumbnail,
                             height: 200,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.broken_image, size: 100),
                           )
                         : const Icon(Icons.book, size: 100),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    book['title']!,
+                    title,
                     style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    'by ${book['author']}',
+                    'by $author',
                     style: const TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    book['description']!,
+                    description,
                     style: const TextStyle(fontSize: 16),
                   ),
                 ],
@@ -54,22 +61,21 @@ class BookDetailsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: () {
-                // Check if the book is already in favorites
                 final alreadyInFavorites = favorites.any(
-                  (favBook) => favBook['title'] == book['title'],
+                  (favBook) => favBook['title'] == title,
                 );
 
                 if (alreadyInFavorites) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${book['title']} is already in favorites!'),
+                      content: Text('$title is already in favorites!'),
                     ),
                   );
                 } else {
-                  Navigator.pop(context, book); // Return the book to add to favorites
+                  Navigator.pop(context, book);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${book['title']} added to favorites!'),
+                      content: Text('$title added to favorites!'),
                     ),
                   );
                 }
