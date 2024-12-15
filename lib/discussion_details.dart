@@ -1,64 +1,71 @@
 import 'package:flutter/material.dart';
 
-class DiscussionDetailsScreen extends StatefulWidget {
+class DiscussionDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> discussion;
+  final Function(Map<String, dynamic>) onReplyAdded;
 
-  const DiscussionDetailsScreen({required this.discussion, Key? key}) : super(key: key);
-
-  @override
-  _DiscussionDetailsScreenState createState() => _DiscussionDetailsScreenState();
-}
-
-class _DiscussionDetailsScreenState extends State<DiscussionDetailsScreen> {
-  final TextEditingController replyController = TextEditingController();
-
-  void _addReply(String reply) {
-    setState(() {
-      widget.discussion['replies'].add(reply);
-    });
-  }
+  const DiscussionDetailsScreen({
+    required this.discussion,
+    required this.onReplyAdded,
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final TextEditingController replyController = TextEditingController();
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.discussion['title']),
+        title: Text(discussion['title']),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: widget.discussion['replies'].length,
-              itemBuilder: (context, index) {
-                final reply = widget.discussion['replies'][index];
-                return ListTile(
-                  title: Text(reply),
-                );
-              },
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Created on ${discussion['timestamp'].toString()}",
+              style: const TextStyle(color: Colors.grey),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: replyController,
-                    decoration: const InputDecoration(hintText: 'Enter your reply...'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: discussion['replies'].length,
+                itemBuilder: (context, index) {
+                  final reply = discussion['replies'][index];
+                  return ListTile(
+                    title: Text(reply['reply']),
+                    subtitle: Text(
+                      "Replied on ${reply['timestamp'].toString()}",
+                    ),
+                  );
+                },
+              ),
+            ),
+            const Divider(),
+            TextField(
+              controller: replyController,
+              decoration: InputDecoration(
+                hintText: "Write a reply...",
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.send),
                   onPressed: () {
-                    _addReply(replyController.text);
-                    replyController.clear();
+                    if (replyController.text.isNotEmpty) {
+                      onReplyAdded({
+                        'reply': replyController.text.trim(),
+                        'timestamp': DateTime.now(),
+                      });
+                      replyController.clear();
+                    }
                   },
-                  child: const Text('Submit'),
                 ),
-              ],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

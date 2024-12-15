@@ -1,53 +1,49 @@
 import 'package:flutter/material.dart';
+import 'discussion_details.dart';
 
 class CommunityDiscussionsScreen extends StatefulWidget {
   @override
-  _CommunityDiscussionsScreenState createState() => _CommunityDiscussionsScreenState();
+  _CommunityDiscussionsScreenState createState() =>
+      _CommunityDiscussionsScreenState();
 }
 
-class _CommunityDiscussionsScreenState extends State<CommunityDiscussionsScreen> {
-  final TextEditingController _discussionController = TextEditingController();
+class _CommunityDiscussionsScreenState
+    extends State<CommunityDiscussionsScreen> {
   final List<Map<String, dynamic>> discussions = [];
+  final TextEditingController _newDiscussionController =
+      TextEditingController();
 
-  void addDiscussion(String content) {
+  void addNewDiscussion(String title) {
     setState(() {
       discussions.add({
-        'content': content,
+        'title': title,
         'timestamp': DateTime.now(),
-        'replies': [],
+        'replies': [], // Initialize replies for this discussion
       });
     });
-    _discussionController.clear();
-  }
-
-  void addReply(int index, String reply) {
-    setState(() {
-      discussions[index]['replies'].add({
-        'content': reply,
-        'timestamp': DateTime.now(),
-      });
-    });
+    _newDiscussionController.clear();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Community Discussions'),
+        title: const Text("Community Discussions"),
+        centerTitle: true,
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _discussionController,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _newDiscussionController,
               decoration: InputDecoration(
-                hintText: 'Start a new discussion...',
+                hintText: "Start a new discussion...",
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.send),
                   onPressed: () {
-                    if (_discussionController.text.trim().isNotEmpty) {
-                      addDiscussion(_discussionController.text.trim());
+                    if (_newDiscussionController.text.isNotEmpty) {
+                      addNewDiscussion(_newDiscussionController.text);
                     }
                   },
                 ),
@@ -56,62 +52,40 @@ class _CommunityDiscussionsScreenState extends State<CommunityDiscussionsScreen>
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: discussions.length,
-              itemBuilder: (context, index) {
-                final discussion = discussions[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: ExpansionTile(
-                    title: Text(
-                      discussion['content'],
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      'Posted on ${discussion['timestamp'].toString()}',
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                    children: [
-                      ...discussion['replies'].map<Widget>((reply) {
+            const SizedBox(height: 16),
+            Expanded(
+              child: discussions.isEmpty
+                  ? const Center(child: Text("No discussions yet."))
+                  : ListView.builder(
+                      itemCount: discussions.length,
+                      itemBuilder: (context, index) {
+                        final discussion = discussions[index];
                         return ListTile(
-                          title: Text(reply['content']),
+                          title: Text(discussion['title']),
                           subtitle: Text(
-                            'Replied on ${reply['timestamp'].toString()}',
-                            style: const TextStyle(color: Colors.grey, fontSize: 12),
-                          ),
+                              "Created on ${discussion['timestamp'].toString()}"),
+                          trailing: const Icon(Icons.arrow_forward),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DiscussionDetailsScreen(
+                                  discussion: discussion,
+                                  onReplyAdded: (reply) {
+                                    setState(() {
+                                      discussions[index]['replies'].add(reply);
+                                    });
+                                  },
+                                ),
+                              ),
+                            );
+                          },
                         );
-                      }).toList(),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Reply to this discussion...',
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.send),
-                              onPressed: () {
-                                // Capture reply
-                                final replyController = TextEditingController();
-                                if (replyController.text.trim().isNotEmpty) {
-                                  addReply(index, replyController.text.trim());
-                                  replyController.clear();
-                                }
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                      },
+                    ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
