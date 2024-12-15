@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class RegistrationScreen extends StatefulWidget {
-  final Map<String, String> users;
+  final Map<String, Map<String, String>> users; // Updated to handle nested users map
 
-  RegistrationScreen({required this.users});
+  const RegistrationScreen({required this.users, Key? key}) : super(key: key);
 
   @override
   _RegistrationScreenState createState() => _RegistrationScreenState();
@@ -12,43 +12,42 @@ class RegistrationScreen extends StatefulWidget {
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController screenNameController = TextEditingController();
 
   void register() {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
-    final confirmPassword = confirmPasswordController.text.trim();
+    final screenName = screenNameController.text.trim();
 
-    if (password != confirmPassword) {
-      // Show error
+    if (email.isNotEmpty && password.isNotEmpty && screenName.isNotEmpty) {
+      if (widget.users.containsKey(email)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Email is already registered.')),
+        );
+      } else {
+        // Add new user to the users map
+        setState(() {
+          widget.users[email] = {
+            'password': password,
+            'screenName': screenName,
+          };
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registration successful!')),
+        );
+        Navigator.pop(context); // Navigate back to login screen
+      }
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Passwords do not match.')),
+        const SnackBar(content: Text('Please fill out all fields.')),
       );
-      return;
     }
-
-    if (widget.users.containsKey(email)) {
-      // Show error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Account already exists.')),
-      );
-      return;
-    }
-
-    // Register the user
-    widget.users[email] = password;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Registration successful!')),
-    );
-
-    // Navigate back to Login Screen
-    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Register")),
+      appBar: AppBar(title: const Text("Register")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -56,30 +55,29 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             // Email Field
             TextField(
               controller: emailController,
-              decoration: InputDecoration(labelText: "Email"),
+              decoration: const InputDecoration(labelText: "Email"),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
 
             // Password Field
             TextField(
               controller: passwordController,
-              decoration: InputDecoration(labelText: "Password"),
+              decoration: const InputDecoration(labelText: "Password"),
               obscureText: true,
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-            // Confirm Password Field
+            // Screen Name Field
             TextField(
-              controller: confirmPasswordController,
-              decoration: InputDecoration(labelText: "Confirm Password"),
-              obscureText: true,
+              controller: screenNameController,
+              decoration: const InputDecoration(labelText: "Screen Name"),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Register Button
             ElevatedButton(
               onPressed: register,
-              child: Text("Register"),
+              child: const Text("Register"),
             ),
           ],
         ),

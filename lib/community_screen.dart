@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'discussion_details.dart';
 
 class CommunityDiscussionsScreen extends StatefulWidget {
+  final String screenName;
+
+  const CommunityDiscussionsScreen({required this.screenName, Key? key})
+      : super(key: key);
+
   @override
   _CommunityDiscussionsScreenState createState() =>
       _CommunityDiscussionsScreenState();
@@ -17,8 +22,9 @@ class _CommunityDiscussionsScreenState
     setState(() {
       discussions.add({
         'title': title,
+        'author': widget.screenName,
         'timestamp': DateTime.now(),
-        'replies': [], // Initialize replies for this discussion
+        'replies': [],
       });
     });
     _newDiscussionController.clear();
@@ -27,10 +33,7 @@ class _CommunityDiscussionsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Community Discussions"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Community Discussions")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -63,7 +66,7 @@ class _CommunityDiscussionsScreenState
                         return ListTile(
                           title: Text(discussion['title']),
                           subtitle: Text(
-                              "Created on ${discussion['timestamp'].toString()}"),
+                              "By ${discussion['author']} on ${discussion['timestamp'].toString()}"),
                           trailing: const Icon(Icons.arrow_forward),
                           onTap: () {
                             Navigator.push(

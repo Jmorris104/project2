@@ -3,11 +3,13 @@ import 'book_details.dart';
 import 'community_screen.dart';
 import 'recommendations_screen.dart';
 import 'google_book_api.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String email;
+  String screenName;
 
-  const HomeScreen({required this.email, Key? key}) : super(key: key);
+  HomeScreen({required this.email, required this.screenName, Key? key}) : super(key: key);
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -44,9 +46,19 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             DrawerHeader(
               decoration: const BoxDecoration(color: Colors.blue),
-              child: Text(
-                'Welcome, ${widget.email}',
-                style: const TextStyle(color: Colors.white, fontSize: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Menu',
+                    style: TextStyle(color: Colors.white, fontSize: 24),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Welcome, ${widget.screenName}',
+                    style: const TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                ],
               ),
             ),
             ListTile(
@@ -68,7 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => CommunityDiscussionsScreen(),
+                    builder: (context) => CommunityDiscussionsScreen(
+                      screenName: widget.screenName,
+                    ),
                   ),
                 );
               },
@@ -80,8 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        RecommendationsScreen(favorites: favorites),
+                    builder: (context) => RecommendationsScreen(favorites: favorites),
                   ),
                 );
               },
@@ -90,7 +103,20 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.settings),
               title: const Text('Settings'),
               onTap: () {
-                // Implement settings page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SettingsScreen(
+                      email: widget.email,
+                      screenName: widget.screenName,
+                      onScreenNameUpdated: (newScreenName) {
+                        setState(() {
+                          widget.screenName = newScreenName;
+                        });
+                      },
+                    ),
+                  ),
+                );
               },
             ),
           ],

@@ -3,6 +3,9 @@ import 'registration_screen.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
+  final Map<String, Map<String, String>> users; // Updated to support nested maps
+  LoginScreen({required this.users, Key? key}) : super(key: key);
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -11,25 +14,27 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  // Simulated user database (In-memory data, replace with actual backend)
-  final Map<String, String> users = {
-    "test@example.com": "password123", // Example user
-  };
-
   void login() {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
-    if (users.containsKey(email) && users[email] == password) {
+    if (widget.users.containsKey(email) &&
+        widget.users[email]?['password'] == password) {
+      final screenName = widget.users[email]?['screenName'] ?? 'User';
       // Successful login
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen(email: email)),
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(
+            email: email,
+            screenName: screenName,
+          ),
+        ),
       );
     } else {
       // Show error
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid email or password.')),
+        const SnackBar(content: Text('Invalid email or password.')),
       );
     }
   }
@@ -37,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Login")),
+      appBar: AppBar(title: const Text("Login")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -45,22 +50,22 @@ class _LoginScreenState extends State<LoginScreen> {
             // Email Field
             TextField(
               controller: emailController,
-              decoration: InputDecoration(labelText: "Email"),
+              decoration: const InputDecoration(labelText: "Email"),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
 
             // Password Field
             TextField(
               controller: passwordController,
-              decoration: InputDecoration(labelText: "Password"),
+              decoration: const InputDecoration(labelText: "Password"),
               obscureText: true,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Login Button
             ElevatedButton(
               onPressed: login,
-              child: Text("Login"),
+              child: const Text("Login"),
             ),
 
             // Navigate to Registration Screen
@@ -69,11 +74,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => RegistrationScreen(users: users),
+                    builder: (context) => RegistrationScreen(users: widget.users),
                   ),
                 );
               },
-              child: Text("Don't have an account? Register here"),
+              child: const Text("Don't have an account? Register here"),
             ),
           ],
         ),
